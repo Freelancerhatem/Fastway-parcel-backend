@@ -19,11 +19,19 @@ const client = new MongoClient(uri, {
   });
 async function run(){
     try{
-        const testCollection = client.db("parcelDB").collection('users');
+        const userCollection = client.db("parcelDB").collection('users');
 
         app.get('/users',async(req,res)=>{
-            const result = await testCollection.find().toArray();
+            const result = await userCollection.find().toArray();
             res.send(result);
+        });
+        app.patch('/users/admin/:id',async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id:new ObjectId(id)}
+            const data = {userType: 'deliveryMan'};
+            const result = await userCollection.updateOne(query,{$set: data });
+            res.send(result);
+
         })
     }
     finally{

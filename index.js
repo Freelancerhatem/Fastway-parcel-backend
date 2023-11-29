@@ -12,63 +12,106 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.USER_NAME}:${process.env.USER_PASS}@assignmentdb.20nrhba.mongodb.net/?retryWrites=true&w=majority`
 const client = new MongoClient(uri, {
     serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
     }
-  });
-async function run(){
-    try{
+});
+async function run() {
+    try {
         const userCollection = client.db("parcelDB").collection('users');
         const reviewsCollection = client.db("parcelDB").collection('reviews');
         const dmanCollection = client.db("parcelDB").collection('deliveryMan');
         const parcelCollection = client.db("parcelDB").collection('allparcel');
 
-        app.get('/users',async(req,res)=>{
+        app.post('/allusersdata', async (req, res) => {
+            const usersData = req.body;
+            const result = await userCollection.insertOne(usersData);
+            res.send(result);
+        });
+        app.get('/users', async (req, res) => {
+            
             const result = await userCollection.find().toArray();
             res.send(result);
         });
-        app.patch('/users/deliveryman/:id',async(req,res)=>{
+        app.patch('/users/deliveryman/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id:new ObjectId(id)}
-            const data = {userType: 'deliveryMan'};
-            const result = await userCollection.updateOne(query,{$set: data });
+            const query = { _id: new ObjectId(id) }
+            const data = { userType: 'deliveryMan' };
+            const result = await userCollection.updateOne(query, { $set: data });
             res.send(result);
 
         })
-        app.patch('/users/admin/:id',async(req,res)=>{
+        app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id:new ObjectId(id)}
-            const data = {userType: 'admin'};
-            const result = await userCollection.updateOne(query,{$set: data });
+            const query = { _id: new ObjectId(id) }
+            const data = { userType: 'admin' };
+            const result = await userCollection.updateOne(query, { $set: data });
             res.send(result);
 
         });
-        app.get('/reviews',async(req,res)=>{
+        app.get('/reviews', async (req, res) => {
             const result = await reviewsCollection.find().toArray();
-            res.send(result); 
+            res.send(result);
         });
-        app.get('/deliveryman',async(req,res)=>{
+        app.get('/deliveryman', async (req, res) => {
             const result = await dmanCollection.find().toArray();
             res.send(result);
         });
-        app.get('/allparcel',async(req,res)=>{
+        app.get('/allparcel', async (req, res) => {
             const result = await parcelCollection.find().toArray();
             res.send(result);
         })
-        app.patch('/parcelstatus',async(req,res)=>{
+        app.patch('/parcelstatus', async (req, res) => {
             const data = req.body;
             // console.log(data);
             const id = data.parcelId;
-            const filter = {_id:new ObjectId(id)};
+            const filter = { _id: new ObjectId(id) };
             const deliveryManId = data.id
-            const query = {$set:{status:data.status,deliveryman:deliveryManId}}
+            const query = { $set: { status: data.status, deliveryman: deliveryManId } }
             const options = { upsert: true };
-            const update = await parcelCollection.updateOne(filter,query,options);
+            const update = await parcelCollection.updateOne(filter, query, options);
             res.send(update);
+        });
+        // filter delivery Man parcel data
+        app.get('/myparceldata', async (req, res) => {
+            const query = req.query.user;
+            
+            const useremail= {email:query}
+            const mydbData = await dmanCollection.findOne(useremail);
+            const{_id} = mydbData;
+            const id = _id.toHexString();
+            
+            const mydeliveryData = await parcelCollection.find({deliveryman:id}).toArray();
+            res.send(mydeliveryData);
+        })
+        // delivery status updated
+        app.patch('/deliveryUpdate',async(req,res)=>{
+            const {id} =req.body;
+            console.log(id)
+            
+            const filter = {_id:new ObjectId(id)};
+            const query = {$set:{status:'delivered'}};
+            const result = await parcelCollection.updateOne(filter,query)
+            res.send(result)
+
+        });
+        //parcel book by user
+        app.post('/bookParcel',async(req,res)=>{
+            const BookParcelData = req.body;
+            const result = await parcelCollection.insertOne(BookParcelData);
+            res.send(result);
+        });
+        // my parcel data with user email
+        app.get('/userparcel',async(req,res)=>{
+            const userEmail = req.query.email;
+            
+            const filter = {email:userEmail};
+            const result = await parcelCollection.find(filter).toArray()
+            res.send(result);
         })
     }
-    finally{
+    finally {
 
     }
 }

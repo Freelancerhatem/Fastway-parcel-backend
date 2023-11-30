@@ -110,6 +110,48 @@ async function run() {
             const result = await parcelCollection.find(filter).toArray()
             res.send(result);
         })
+
+        //my parcel update cancel status and update parcel data
+        app.patch('/cancelStatus/:id',async(req,res)=>{
+            const id = req.params.id;
+            const filter = {_id:new ObjectId(id)}
+            const query = {$set:{status:'cancelled'}}
+            const result = await parcelCollection.updateOne(filter,query)
+            res.send(result);
+        });
+        app.patch('/updateParcel/:id',async(req,res)=>{
+            const id = req.params.id;
+            const data=req.body
+            
+            const filter = {_id:new ObjectId(id)}
+            const query = {$set:data}
+            const result = await parcelCollection.updateOne(filter,query)
+            res.send(result);
+        });
+        // check login user type and send his data
+        app.get('/loginUserType',async(req,res)=>{
+            const userEmail = req.query.user;
+            
+            const filter ={email:userEmail};
+            const result = await userCollection.findOne(filter);
+            res.send(result);
+        });
+        // update the image of user
+        app.patch('/updateImage',async(req,res)=>{
+            const userEmail = req.query.user;
+            const filter = {email:userEmail};
+            const {img} = req.body;
+            const query ={$set:{image:img}}
+            const result = await userCollection.updateOne(filter,query)
+            res.send(result);
+        });
+        // delivery man data with sort by delivery
+        app.get('/topdeliveryman',async(req,res)=>{
+            const query={parcelsDelivered:-1}
+            const result = await dmanCollection.find().sort(query).toArray();
+            res.send(result)
+        })
+
     }
     finally {
 

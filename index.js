@@ -150,6 +150,11 @@ async function run() {
             const query={parcelsDelivered:-1}
             const result = await dmanCollection.find().sort(query).toArray();
             res.send(result)
+        });
+        app.post('/updatereview',async(req,res)=>{
+            const data = req.body; 
+            const result = await reviewsCollection.insertOne(data);
+            res.send(result); 
         })
 
     }
